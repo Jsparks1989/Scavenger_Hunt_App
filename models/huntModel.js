@@ -61,6 +61,11 @@ const huntSchema = new mongoose.Schema({
     required: [true, 'A hunt must have a description'],
     trim: true,
   },
+  difficulty: {
+    type: String,
+    required: [true, 'A hunt must have a difficulty'],
+    trim: true,
+  },
   items: [
     {
       name: {
@@ -89,6 +94,11 @@ const huntSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'A hunt must have an end date'],
   },
+  createdAt: {
+    type: Date,
+    default: Date.now(),
+    select: false,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User', // Reference to the User model
@@ -99,7 +109,15 @@ const huntSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User' // Reference to the User model
     }
-  ]
+  ],
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  winner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User' // Reference to the User model
+  }
 });
 
 
