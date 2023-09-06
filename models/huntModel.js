@@ -1,3 +1,8 @@
+/***
+ * BUSINESS LOGIC
+ * FAT MODELS - OFFLOAD AS MUCH LOGIC AS POSSIBLE INTO THE MODELS
+ */
+
 /**
  * HUNTMODEL.JS
  * ================================================================
@@ -35,6 +40,7 @@
     REQUIRED
 =========================================================================== */
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 /* ===========================================================================
     SCHEMA
@@ -56,6 +62,7 @@ const huntSchema = new mongoose.Schema({
     required: [true,'A hunt must have a name'],
     trim: true,
   },
+  slug: String,
   description: {
     type: String,
     required: [true, 'A hunt must have a description'],
@@ -124,20 +131,9 @@ const huntSchema = new mongoose.Schema({
 });
 
 
-/*
-  Virtual Properties
-  ==================
-  - Virtual properties are basically fields that we can define on our schema but that will not be persisted.
-  - So they will not be saved into the database in order to save us some space there.
-  - And most of the time, of course, we want to really save our data to the database,
-    but virtual properties make a lot of sense for fields that can be derived from one another.
-  - Ex. Conversion of miles to kilometers.
-  - The virtual properties only show up in responses after we get the data required to create the virtual properties && we pass in options in the Schema.
-    - Ex. const tourSchema = new mongoose.Schema({ Schema_definitions }, { Schema_options });
-    - Schema options need to be { toJSON: { virtuals: true }, toObject: { virtuals: true } }
-      - The options - The virtuals to be part of the output && The data to get outputted as an object.
-  - CANNOT USE VIRTUAL PROPERTIES AS A QUERY. They are not part of the database.
-*/
+/* ===========================================================================
+    VIRTUAL PROPERTIES
+=========================================================================== */
 /**
  * Creating a virtual property.
  * Define the property with: tourSchema.virtual('property_name').
@@ -158,6 +154,61 @@ huntSchema.virtual('numOfItems').get(function() {
 });
 
 
+/* ===========================================================================
+    MONGOOSE MIDDLEWARE
+=========================================================================== */
+/* ======================================================================================================
+  Mongoose also has the concept of MW.
+  ====================================
+  - There are four TYPES of middleware in Mongoose:
+    - document, query, aggregate, and model middleware.
+
+  - Going to work with document MW first.
+    - Which is middleware that can act on the currently processed document.
+
+  - just like the virtual properties, we define a middleware on the schema, using tourSchema.pre().
+    - this is for pre middleware, which again, is gonna run before an actual event, like the save event.
+    - the callback function is called before an actual document is saved to the DB.
+    - Ex. tourSchema.pre('event_name', callback_function())
+
+  - And so this is for pre middleware, which again, is gonna run before an actual event.
+
+  - We can have multiple pre middlewares or also post middlewares for the same hook. 
+    - And hook is what 'save' is in the MW params.
+    - So this middleware here is basically what we call a pre save hook.
+====================================================================================================== */
+/**
+ * Document type MW in Mongoose.
+ * -----------------------------
+ * This is a pre save hook || pre save middleware.
+ * Is ran before (pre) an actual document is saved to the DB.
+ * Runs BEFORE .save() and .create().
+ * Will NOT run with .insertMany().
+ * 'this' is bound to the currently processed document.
+ * The result from the callback should be present in the document once saved since its taking place before being saved.
+ * ----------------------------------------------------------------
+ * 1. Create a new property 'slug' on the current document using slugify and make it the document's name and make it lowercase.
+ *   A slug is just a string that we can put in the URL, usually based on some string like the name.
+ * 2. Need to add 'slug' field to the schema or else it wont work.
+ */
+huntSchema.pre('save', function(next) {
+  this.slug = slugify(this.title, { lower: true });
+
+  next();
+});
+
+/**
+ * Document Type Post MW in Mongoose
+ * ---------------------------------
+ * This is a post save hook || post save middleware.
+ * Bc its a Post MW, we will have access to next AND the just saved document.
+ * Post MW functions run after all the Pre MW functions have completed.
+ */
+huntSchema.post('save', function(doc, next) {
+  console.log('This is the document POST being saved to the DB:', doc);
+
+  next();
+});
 
 /* ===========================================================================
     MODEL
