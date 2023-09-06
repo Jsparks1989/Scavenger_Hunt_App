@@ -56,11 +56,29 @@ const slugify = require('slugify');
  * participants - array of all the participants.
  * 
  */ 
+
+/* ======================================================================================================
+  Mongoose Data Validation
+  ========================
+  - Validation is basically checking if the entered values are in the right format for each field in our document schema, 
+      and also that values have actually been entered for all of the required fields.
+  - Bc of the fat Model, thin Controller philosophy, the Model is where we want to perform validation.
+  - required, type, and trim in the schema is a validation feature.
+  - Add 'maxlength' and 'minlength' to schema for more validation.
+  - Havent completely fleshed out the Schema yet, could add more validation to the schema later.
+
+  - We also have sanitization, which is to ensure that the inputted data is basically clean, 
+      so that there is no malicious code being injected into our database, or into the application itself.
+  - So, in the sanitation step, we remove unwanted characters, or even code, from the input data.
+  - We always need to sanitize incoming data.
+====================================================================================================== */
 const huntSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true,'A hunt must have a name'],
     trim: true,
+    maxlength: [40, 'A hunt must name must have less than or equal to 40 characters'],
+    minlength: [10, 'A hunt must name must have more than or equal to 10 characters'],
   },
   slug: String,
   description: {
