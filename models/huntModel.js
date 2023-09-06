@@ -118,8 +118,44 @@ const huntSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' // Reference to the User model
   }
+}, {
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
 });
 
+
+/*
+  Virtual Properties
+  ==================
+  - Virtual properties are basically fields that we can define on our schema but that will not be persisted.
+  - So they will not be saved into the database in order to save us some space there.
+  - And most of the time, of course, we want to really save our data to the database,
+    but virtual properties make a lot of sense for fields that can be derived from one another.
+  - Ex. Conversion of miles to kilometers.
+  - The virtual properties only show up in responses after we get the data required to create the virtual properties && we pass in options in the Schema.
+    - Ex. const tourSchema = new mongoose.Schema({ Schema_definitions }, { Schema_options });
+    - Schema options need to be { toJSON: { virtuals: true }, toObject: { virtuals: true } }
+      - The options - The virtuals to be part of the output && The data to get outputted as an object.
+  - CANNOT USE VIRTUAL PROPERTIES AS A QUERY. They are not part of the database.
+*/
+/**
+ * Creating a virtual property.
+ * Define the property with: tourSchema.virtual('property_name').
+ * Define the get method with: get()
+ *   The virtual property will be created each time that we get some data out of the database.
+ *   So this get() function is called a getter.
+ * 'this' points to the document.
+ *
+ * Knowing the duration in weeks is a Business Logic (goes in the model) since it has to do with the business itself.
+ * It is not Application logic bc its got nothing to do with requests or responses.
+ */
+huntSchema.virtual('numOfParticipants').get(function() {
+  return this.participants.length;
+});
+
+huntSchema.virtual('numOfItems').get(function() {
+  return this.items.length;
+});
 
 
 
