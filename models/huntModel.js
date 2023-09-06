@@ -121,6 +121,10 @@ const huntSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  incompletedHunt: {
+    type: Boolean,
+    default: false
+  },
   winner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User' // Reference to the User model
@@ -157,26 +161,6 @@ huntSchema.virtual('numOfItems').get(function() {
 /* ===========================================================================
     MONGOOSE MIDDLEWARE
 =========================================================================== */
-/* ======================================================================================================
-  Mongoose also has the concept of MW.
-  ====================================
-  - There are four TYPES of middleware in Mongoose:
-    - document, query, aggregate, and model middleware.
-
-  - Going to work with document MW first.
-    - Which is middleware that can act on the currently processed document.
-
-  - just like the virtual properties, we define a middleware on the schema, using tourSchema.pre().
-    - this is for pre middleware, which again, is gonna run before an actual event, like the save event.
-    - the callback function is called before an actual document is saved to the DB.
-    - Ex. tourSchema.pre('event_name', callback_function())
-
-  - And so this is for pre middleware, which again, is gonna run before an actual event.
-
-  - We can have multiple pre middlewares or also post middlewares for the same hook. 
-    - And hook is what 'save' is in the MW params.
-    - So this middleware here is basically what we call a pre save hook.
-====================================================================================================== */
 /**
  * Document type MW in Mongoose.
  * -----------------------------
@@ -191,11 +175,11 @@ huntSchema.virtual('numOfItems').get(function() {
  *   A slug is just a string that we can put in the URL, usually based on some string like the name.
  * 2. Need to add 'slug' field to the schema or else it wont work.
  */
-huntSchema.pre('save', function(next) {
-  this.slug = slugify(this.title, { lower: true });
+// huntSchema.pre('save', function(next) {
+//   this.slug = slugify(this.title, { lower: true });
 
-  next();
-});
+//   next();
+// });
 
 /**
  * Document Type Post MW in Mongoose
@@ -204,8 +188,59 @@ huntSchema.pre('save', function(next) {
  * Bc its a Post MW, we will have access to next AND the just saved document.
  * Post MW functions run after all the Pre MW functions have completed.
  */
-huntSchema.post('save', function(doc, next) {
-  console.log('This is the document POST being saved to the DB:', doc);
+// huntSchema.post('save', function(doc, next) {
+//   console.log('This is the document POST being saved to the DB:', doc);
+
+//   next();
+// });
+
+/* ======================================================================================================
+  Mongoose Query Type of MW.
+  ==========================
+  - Query MW allows us to run functions before or after a certain query is executed.
+
+  - And so let's now add a pre-find hook (find), so basically, a middleware that is gonna run before any find query is executed.
+
+  - Create a incompleteHunt field in the Schema. This will be for Hunts that are not completeted by its creator and not ready for use.
+    Use this field to filter out the incomplete hunts from any queries.
+====================================================================================================== */
+/**
+ * Query type MW in Mongoose
+ * -------------------------
+ * This is a pre find hook || pre find MW.
+ * Instead of 'this' pointing at the current document (Document type MW), it will point to the current query.
+ * We want to have certain hunts that arent available for the public to know about.
+ * We need to know create a secret hunts field in the Schema.
+ * We can use Query type MW to remove any hunts with the secretTour field: true from the results.
+ * ------------------------------------------------------------------------------------------------
+ * 1. Based on the query (this), we get all the hunts where incompletedHunt !== true.
+ *   But this only works with queries using the hook (find), not the hook findOne, so we need another solution for this.
+ * 2. Use RegEx for the hook instead of 'find'.
+ *   This will run the MW for any hook starting with 'find'.
+ * 3. Create a start field for the current query and set it to the current time in milliseconds.
+ *   Will subtract this time from the current time in the post MW so we know how long the query took.
+ */
+huntSchema.pre(/^find/, function(next) {
+  this.find({ incompletedHunt: { $ne: true } });
+
+  this.start = Date.now();
+  next();
+});
+
+/**
+ * Query type MW in Mongoose
+ * -------------------------
+ * This is a post find hook || post find MW.
+ * Using a RegEx for the hook, so it covers all hooks starting with 'find'.
+ *   Ex. find, findOne, etc..
+ * This MW runs AFTER the query has executed.
+ * Since its a post MW, we have access to all the docs returned by the query.
+ * ------------------------------------------------------------------------------------------------
+ */
+huntSchema.post(/^find/, function(docs, next) {
+  console.log(`This query took ${Date.now() - this.start} milliseconds to complete.`);
+
+  console.log('All the docs returned after the query has executed:', docs);
 
   next();
 });

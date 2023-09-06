@@ -73,6 +73,7 @@ exports.getAllHunts = async (req, res) => {
     /////////////////////////////////
     res.status(200).json({
       status: 'success',
+      results: hunts.length,
       data: {
         hunts: hunts,
       },
