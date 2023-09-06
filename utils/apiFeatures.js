@@ -88,6 +88,8 @@ class APIFeatures {
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 
     this.query = this.query.find(JSON.parse(queryStr));
+
+    return this;
   }
 
   // SORTING
@@ -115,11 +117,11 @@ class APIFeatures {
    * 5. Return 'this' outside if statement so we can chain the sort() method to the query when the query is being executed..
    */
   sort() {
-    if(this.query.sort) {
+    if(this.queryString.sort) {
       const sortBy = this.query.sort.split(',').join(' ');
       this.query = this.query.sort(sortBy);
     } else {
-      this.query = this.query.sort('-createdAt');
+      // this.query = this.query.sort('-createdAt');
     }
 
     return this;
@@ -203,6 +205,8 @@ class APIFeatures {
     const skip = (page -1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);
+
+    return this;
   }
 }
 

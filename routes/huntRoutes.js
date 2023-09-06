@@ -28,6 +28,11 @@ const huntController = require('../controllers/huntController');
 =========================================================================== */
 const router = express.Router();
 
+//--- Route for Aggregate Pipeline controllers
+router
+  .route('/hunt-stats')
+  .get(huntController.getHuntStats);
+  
 router
   .route('/')
   .get(huntController.getAllHunts)
@@ -39,6 +44,8 @@ router
   .get(huntController.getHunt)
   .patch(huntController.updateHunt)
   .delete(huntController.deleteHunt);
+
+
 
 
 

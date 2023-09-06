@@ -27,6 +27,7 @@
     REQUIRED
 =========================================================================== */
 const Hunt = require('../models/huntModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 
 
@@ -58,7 +59,7 @@ exports.getAllHunts = async (req, res) => {
 
     // BUILD THE QUERY
     /////////////////////////////////
-    const features = new APIFeatures(Tour.find(), req.query)
+    const features = new APIFeatures(Hunt.find(), req.query)
       .filter()
       .sort()
       .limitFields()
@@ -66,7 +67,7 @@ exports.getAllHunts = async (req, res) => {
 
     // EXECUTE THE QUERY
     /////////////////////////////////
-    const tours = await features.query;
+    const hunts = await features.query;
 
     // SEND RESPONSE
     /////////////////////////////////
@@ -202,4 +203,58 @@ exports.deleteHunt = async (req, res) => {
     }); 
   }
   
+}
+
+/* ===========================================================================
+    AGGREGATE PIPELINE FUNCTIONS
+=========================================================================== */
+/* ======================================================================================================================
+  Data Aggregation - Data aggregators summarize data from multiple sources.
+
+  Aggegation Pipeline - A defined pipeline that all documents from a certain collection go through where they are
+    processedstep by step in order to transform them into aggregated results.
+    
+    Ex. We can use the aggregation pipeline in order to calculate averages or calculating minimum and maximum values
+      or we can calculate distances.
+
+  The MongoDB aggregation pipeline is a powerful and flexible framework for processing and transforming data within a MongoDB database. 
+    It allows you to perform complex data manipulation operations on documents stored in a collection, 
+    such as filtering, grouping, sorting, and projecting fields. 
+    The aggregation pipeline consists of a series of stages that you can use to process and reshape your data.
+
+  Each stage in the aggregation pipeline performs a specific operation on the documents as they pass through the pipeline, 
+    and the results of one stage become the input for the next stage.
+====================================================================================================================== */
+/**
+ * Aggregate Pipeline function for getting stats for Hunt docs
+ * -----------------------------------------------------------
+ * ---> Come back to using aggregate pipelines later. I could use them for showing average number of wins or completes etc. based on players and/or difficulty.
+ */
+exports.getHuntStats = async (req, res) => {
+  try {
+    // BUILD & EXECUTE THE QUERY
+    //////////////////////////////
+    const stats = await Hunt.aggregate([
+      {
+        $match: { completed: false }
+      },
+    ]);
+    console.log('stats');
+
+    // SEND RESPONSE
+    ///////////////////////
+    res.status(200).json({
+      status: 'success',
+      data: {
+        stats,
+      }
+    }); 
+
+
+  } catch(err) {
+    res.status(400).json({
+      status: 'error',
+      data: err
+    }); 
+  }
 }
