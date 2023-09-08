@@ -51,12 +51,26 @@ app.use(express.json());
 
 
 /* ===========================================================================
-    ROUTES
+    MW FOR ROUTES
 =========================================================================== */
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/scavhunt', huntRouter);
 
+/**
+ * MW to catch any unhandled routes.
+ * ---------------------------------
+ * This MW needs to come after all other route MW so we catch the unhandled routes.
+ *
+ * We want to handle ALL the unhandled routes & HTTP methods (GET, POST, DELETE, PATCH, etc.).
+ */
+app.all('*', (req, res, next) => {
+  res.status(404).json({
+    status: "fail",
+    message: `Can't find ${req.originalUrl} on this server!`,
+  });
 
+  next();
+});
 /* ===========================================================================
     EXPORTS
 =========================================================================== */
