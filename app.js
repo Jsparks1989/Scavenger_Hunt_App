@@ -51,8 +51,13 @@ app.use(express.json());
 
 
 /* ===========================================================================
-    MW FOR ROUTES
+    GLOBAL MW FOR ROUTES
 =========================================================================== */
+/**
+ * Mount the imported routers for tours and users to the app.
+ * ----------------------------------------------------------
+ * Define the 'root' path for each resource and use the router as the middleware function.
+ */
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/scavhunt', huntRouter);
 
@@ -62,15 +67,51 @@ app.use('/api/v1/scavhunt', huntRouter);
  * This MW needs to come after all other route MW so we catch the unhandled routes.
  *
  * We want to handle ALL the unhandled routes & HTTP methods (GET, POST, DELETE, PATCH, etc.).
+ * 
+ * When an unhandled route is encountered, an err is passed in through next() and will trigger the error handling MW.
  */
 app.all('*', (req, res, next) => {
-  res.status(404).json({
-    status: "fail",
-    message: `Can't find ${req.originalUrl} on this server!`,
-  });
+  const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+  err.status = 'fail';
+  err.statusCode = 404;
 
+  next(err);
+});
+
+/* ===========================================================================
+    GLOBAL MW FOR ROUTES
+=========================================================================== */
+/**
+ * Global Express error handling.
+ * ------------------------------
+ * Express has built-in error handling.
+ *
+ * Catch all the errors coming from all over the app.
+ *   Ex. Errors from route handler, model validator, etc.
+ *
+ * Goal is to have all these errors end up in this central error handling MW.
+ *
+ * If the MW function has 4 arguments, Express will recognize it as an error handling MW.
+ *   Therefore it will only be called if theres an error.
+ *   Err first function.
+ *
+ * When creating an error in a MW, need to pass the error as an argument in to next().
+ *   Express will know its an error when an argument is passed in to next().
+ */
+app.use((err, req, res, next) => {
+  //--- Define a default status code & status if neither are already defined in the err object.
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  res.status(err.statusCode).json({
+    status: err.statusCode,
+    message: err.message,
+    middleware: 'Error Handling',
+  });
+  
   next();
 });
+
 /* ===========================================================================
     EXPORTS
 =========================================================================== */
