@@ -25,6 +25,9 @@ const userRouter = require('./routes/userRoutes');
 const huntRouter = require('./routes/huntRoutes');
 const morgan = require('morgan');
 
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
+
 
 const app = express();
 
@@ -71,11 +74,8 @@ app.use('/api/v1/scavhunt', huntRouter);
  * When an unhandled route is encountered, an err is passed in through next() and will trigger the error handling MW.
  */
 app.all('*', (req, res, next) => {
-  const err = new Error(`Can't find ${req.originalUrl} on this server!`);
-  err.status = 'fail';
-  err.statusCode = 404;
 
-  next(err);
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 /* ===========================================================================
@@ -98,19 +98,7 @@ app.all('*', (req, res, next) => {
  * When creating an error in a MW, need to pass the error as an argument in to next().
  *   Express will know its an error when an argument is passed in to next().
  */
-app.use((err, req, res, next) => {
-  //--- Define a default status code & status if neither are already defined in the err object.
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
-
-  res.status(err.statusCode).json({
-    status: err.statusCode,
-    message: err.message,
-    middleware: 'Error Handling',
-  });
-  
-  next();
-});
+app.use(globalErrorHandler);
 
 /* ===========================================================================
     EXPORTS
